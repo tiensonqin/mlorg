@@ -3,17 +3,17 @@
 /* General page layout */
 
 
-body { 
-    background: #e7e7e7; 
-    font-size: 11pt; 
+body {
+    background: #e7e7e7;
+    font-size: 11pt;
     background: #dddddd ;
 }
 
-#content { 
-    background: #ffffff; 
-    margin: 50px; 
-    border: 2px solid #c0c0c0; 
-    padding: 10px; 
+#content {
+    background: #ffffff;
+    margin: 50px;
+    border: 2px solid #c0c0c0;
+    padding: 10px;
 }
 
 #table-of-contents {
@@ -31,7 +31,7 @@ h3 { margin-left: 15px; border-bottom: 1px grey solid; }
 /* Links */
 a {
     text-decoration: none;
-    
+
 }
 a:hover {
     text-decoration: underline;

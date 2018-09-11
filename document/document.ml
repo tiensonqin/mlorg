@@ -4,8 +4,8 @@
     in a tree formed by headings. *)
 open Batteries
 open Prelude
-(** {1 Type definitions} *) 
-type meta = { 
+(** {1 Type definitions} *)
+type meta = {
   timestamps : Timestamp.t list;
   (** The plain timestamps appearing in the heading *)
   ranges     : Timestamp.range list;
@@ -40,7 +40,7 @@ type heading = {
 (** A heading in a document *)
 
 
-type t = { 
+type t = {
   filename : string;
   (** The filename the document was parsed from *)
   beginning : Block.t list;
@@ -61,7 +61,7 @@ type t = {
   (** The document's author *)
 
 }
-(** 
+(**
     A document is:
     - some content before the first heading
     - a list of top-level headings
@@ -80,36 +80,36 @@ let expand_macros = Config.add config "expand-macros" Config.boolean "Expand mac
 let map f v l = List.map (f v) l
 class ['a] mapper = object(self)
   inherit ['a] Block.mapper
-  method document (v: 'a) d = 
+  method document (v: 'a) d =
     { d with headings = map self#heading v d.headings;
       beginning = self#blocks v d.beginning
     }
-  method heading v h = 
+  method heading v h =
     { h with name = self#inlines v h.name;
       children = map self#heading v h.children;
       content = self#blocks v h.content
-    } 
+    }
 end
 let fold = List.fold_left
 class ['a] folder = object(self)
   inherit ['a] Block.folder
-  method document (v: 'a) d = 
+  method document (v: 'a) d =
     fold self#heading (self#blocks v d.beginning) d.headings
-  method heading v h = 
+  method heading v h =
     self#inlines
-      (fold self#heading 
-         (self#blocks v h.content) 
-         h.children) 
+      (fold self#heading
+         (self#blocks v h.content)
+         h.children)
       h.name
 end
 
 class virtual ['a] bottomUp = object(self)
   inherit ['a] Block.bottomUp
-  method document d = 
+  method document d =
     let a = self#blocks d.beginning in
     let b = List.map self#heading d.headings in
     self#combine (a :: b)
-  method heading h = 
+  method heading h =
     let a = self#inlines h.name in
     let b = self#blocks h.content in
     self#combine (a :: b ::
@@ -118,17 +118,17 @@ end
 
 class virtual ['a, 'b] bottomUpWithArg = object(self)
   inherit ['a, 'b] Block.bottomUpWithArg
-  method document arg d = 
+  method document arg d =
     let a = self#blocks arg d.beginning in
     let b = List.map (self#heading arg) d.headings in
     self#combine (a :: b)
-  method heading arg h = 
+  method heading arg h =
     let a = self#inlines arg h.name in
     let b = self#blocks arg h.content in
     self#combine (a :: b ::
                     List.map (self#heading arg) h.children)
 end
-  
+
 
 (** {1 Importing a tree} *)
 let empty_meta = {
@@ -136,21 +136,21 @@ let empty_meta = {
   clocks = []; current_clock = None;
 }
 
-let collect = 
+let collect =
   let orphans = ref [] in
   let collector = object(self)
     inherit [meta] Block.folder as super
     method block meta = function
-      | Block.Property_Drawer p -> 
+      | Block.Property_Drawer p ->
         { meta with properties = p @ meta.properties }
       | Block.Footnote_Definition (name, def) ->
           if meta.footnotes |> List.exists (fst %> (=) name) then
-            { meta with footnotes = meta.footnotes |> 
-                List.map (fun (name', v) -> 
+            { meta with footnotes = meta.footnotes |>
+                List.map (fun (name', v) ->
                   name, if name' = name then def else v) }
           else (orphans := (name, def) :: !orphans; meta)
       | block -> super#block meta block (* no recursion *)
-    method inline meta = 
+    method inline meta =
       let open Inline in function
         | Timestamp (Date t) -> { meta with timestamps = t :: meta.timestamps }
         | Timestamp (Scheduled t) -> { meta with scheduled = t :: meta.scheduled }
@@ -170,10 +170,10 @@ let collect =
   in
   collector#blocks empty_meta
 
-let gather_keywords doc = 
-  let gatherer = object(self) 
+let gather_keywords doc =
+  let gatherer = object(self)
     inherit [unit] mapper as super
-    method blocks () = 
+    method blocks () =
     let open Block in
         function
           | With_Keywords (l, Paragraph []) :: With_Keywords (l', b) :: q ->
@@ -189,7 +189,7 @@ let gather_keywords doc =
 - the heading
 - the rest *)
 
-let look_for_heading = 
+let look_for_heading =
   let open Block in
       let rec aux acc = function
         | Heading t :: q -> (List.rev acc, Some t, q)
@@ -199,22 +199,22 @@ let look_for_heading =
 
 (* [handle_directives doc] analyses the directives of a document to get the list of
 extensions to load *)
-let handle_directives doc = 
+let handle_directives doc =
   { doc with exts = (try words (List.assoc "extensions" doc.directives)
     with _ -> []);
     opts = List.filter (fun (s, _) -> String.exists s ".") doc.directives
  }
 
-let directives = 
-  List.filter_map 
-    (function Block.Directive (a, b) -> Some (a, b) | _ -> None) 
-let opts = 
-  List.filter_map 
+let directives =
+  List.filter_map
+    (function Block.Directive (a, b) -> Some (a, b) | _ -> None)
+let opts =
+  List.filter_map
     (function Block.Directive (a, b) when String.contains a '.' -> Some (a, b) | _ -> None)
 
 (* Macro substitution *)
-let substitute_macro directives name arguments = 
-  let macros = 
+let substitute_macro directives name arguments =
+  let macros =
     directives |> List.filter (fst %> String.uppercase %> (=) "MACRO")
       |> List.map (snd %> String.split ~by:" ")
   in
@@ -228,12 +228,12 @@ let substitute_macro directives name arguments =
         Buffer.contents buff
     with Not_found -> Log.warning "Macro %s not found" name; ""
 
-let macro_substitution directives = 
+let macro_substitution directives =
   let o = object (self)
     inherit [unit] mapper as super
     method inline () = function
-      | Inline.Macro (name, arguments) -> 
-        Inline.List (self#inlines () 
+      | Inline.Macro (name, arguments) ->
+        Inline.List (self#inlines ()
                        (Org_inline.parse (substitute_macro directives name arguments)))
       | t -> super#inline () t
   end in o#blocks ()
@@ -252,22 +252,22 @@ let from_blocks ?config: conf filename blocks =
      fields that need to be : the metadata, and the children (that are in reverse
      order). It takes an extra parameter which is the content of the heading. *)
   let leave_heading heading c =
-    let heading = 
+    let heading =
       { heading with children = List.rev heading.children;
-        content = c; 
+        content = c;
         meta = collect c }
-    in 
+    in
     List.iter (fun c -> c.father <- Some heading) heading.children;
     heading
   in
-  let directives = 
+  let directives =
     let o = object
       inherit [(string * string) list] Block.folder as super
       method block l = function
         | Block.Directive (a, b) -> (a, b) :: l
         | x -> super#block l x
     end
-    in o#blocks [] blocks 
+    in o#blocks [] blocks
   in
 (* The recursive function processing block by block. [has_contents] tells
   whether the current block has already some content.
@@ -276,39 +276,39 @@ let from_blocks ?config: conf filename blocks =
   - If there is a heading whose level is less than ours' then return as well,
     because our heading stops here
   - Otherwise, parse this heading in a recursive call, and continue *)
-  let rec aux has_contents heading blocks = 
+  let rec aux has_contents heading blocks =
     let up_contents c = if has_contents then heading.content
       else c
     in
     match look_for_heading blocks with
-      | all, None, _ -> 
+      | all, None, _ ->
         leave_heading heading (up_contents all), []
-          
+
       | start, Some ({Block.level = k} as h), rest ->
         if k > heading.level then
-          let child, rest = 
+          let child, rest =
             aux false { name = h.Block.title; father = None;
                         anchor = Inline.asciis h.Block.title;
-                        level = k; content = []; children = []; 
+                        level = k; content = []; children = [];
                         tags = h.Block.tags; marker = h.Block.marker;
-                        priority = h.Block.priority; meta = empty_meta } 
+                        priority = h.Block.priority; meta = empty_meta }
               rest
-          in aux true { heading with 
+          in aux true { heading with
             children = child :: heading.children;
             content = up_contents start
           } rest
         else
-          leave_heading heading (up_contents start), 
+          leave_heading heading (up_contents start),
           (Block.Heading h :: rest)
   in
   (* In the end, don't forget to parse the directives *)
-  let main, _ = 
+  let main, _ =
     aux false { name = []; level = 0; content = []; father = None;
                 anchor = ""; priority = None;
                 children = []; tags = []; marker = None;
                 meta = empty_meta } blocks
   in
-  gather_keywords 
+  gather_keywords
     (handle_directives
        { beginning = main.content; directives;
          exts = []; opts = [];
@@ -319,18 +319,18 @@ let from_blocks ?config: conf filename blocks =
          filename;
        }), config
 (** {1 Parsing from files} *)
-let from_chan ?config filename channel = 
-    BatIO.lines_of channel |> 
+let from_chan ?config filename channel =
+    BatIO.lines_of channel |>
     Org_parser.parse |> snd |>
     from_blocks ?config filename
 
-let from_file ?config filename = 
+let from_file ?config filename =
     BatFile.with_file_in filename (from_chan ?config filename)
 
-let from_fun ?config filename f = 
+let from_fun ?config filename f =
   Enum.from_while f |> Org_parser.parse |> snd |> from_blocks ?config filename
 
-let rec descendants heading = 
+let rec descendants heading =
   heading :: List.concat (List.map descendants heading.children)
 
 let name h = Inline.asciis h.name
@@ -340,10 +340,10 @@ let prop_val name h =
   with Not_found -> None
 let prop_val_ name h =
   List.assoc name h.meta.properties
-  
 
-let dump = 
-  let rec aux i = 
+
+let dump =
+  let rec aux i =
     List.iter (fun heading ->
       for j = 1 to i do
         print_char ' '
@@ -366,8 +366,8 @@ let blocks_by_keywords pred doc =
   in folder#document [] doc
 
 
-let find_block_by_name name doc = 
-  match blocks_by_keywords 
+let find_block_by_name name doc =
+  match blocks_by_keywords
     (fun l -> try List.assoc "NAME" l = name with _ -> false) doc with
     | x :: _ -> Some x
     | _ -> None
@@ -381,27 +381,27 @@ let current_clocked_item doc =
   end
   in o#document None doc
 
-let clocking_time h = 
+let clocking_time h =
   List.fold_left ( + )
     (Option.map_default Timestamp.from_now 0  h.meta.current_clock)
     (List.map Timestamp.duration h.meta.clocks)
 let current_clocking_time doc = Option.map clocking_time (current_clocked_item doc)
 
-let rec has_tag t h = 
+let rec has_tag t h =
   List.mem t h.tags || Option.map_default (has_tag t) false h.father
 
-let rec has_tag t h = 
+let rec has_tag t h =
   List.mem t h.tags || Option.map_default (has_tag t) false h.father
 
-let rec has_tag t h = 
+let rec has_tag t h =
   List.mem t h.tags || Option.map_default (has_tag t) false h.father
 
-let footnotes doc = 
-  let rec handle_heading h = 
+let footnotes doc =
+  let rec handle_heading h =
     h.meta.footnotes @ List.concat (List.map handle_heading h.children)
   in
   doc.beg_meta.footnotes @ List.concat (List.map handle_heading doc.headings)
-  
+
 
 let document ?(filename="") ?(beginning=[]) ?(directives=[]) ?(opts = [])
     ?(beg_meta=empty_meta) ?(exts=[]) ?(title="") ?(author="") headings =
@@ -417,7 +417,7 @@ let heading ?(timestamps=[]) ?(ranges = []) ?(scheduled = []) ?(deadlines = [])
     List.map (fun a -> Timestamp (Clock (Stopped a))) clocks;
     (match current_clock with Some x -> [Timestamp (Clock (Started x))] | _ -> []);
   ]) in
-  let body = 
+  let body =
     (if inline <> [] then [Block.Paragraph inline] else [])
     @ (if properties <> [] then [Block.Property_Drawer properties] else [])
   in
@@ -425,5 +425,3 @@ let heading ?(timestamps=[]) ?(ranges = []) ?(scheduled = []) ?(deadlines = [])
     marker; priority; meta = { timestamps; ranges; scheduled; deadlines; properties; footnotes; clocks;
                                current_clock };
     anchor }
-
-    
