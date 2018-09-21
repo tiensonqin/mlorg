@@ -76,7 +76,7 @@ class ['a] mapper =
         | Example _ | Math _ | Directive _ ) as x ->
           x
 
-    method list_item v ({contents} as x) =
+    method list_item v ({contents; _} as x) =
       {x with contents= self#blocks v contents}
   end
 
@@ -93,7 +93,7 @@ class ['a] folder =
           Array.fold_left
             (Array.fold_left (Array.fold_left self#inlines))
             v t.rows
-      | List (l, b) -> List.fold_left self#list_item v l
+      | List (l, _b) -> List.fold_left self#list_item v l
       | Paragraph i | Footnote_Definition (_, i) -> self#inlines v i
       | With_Keywords (_, t) -> self#block v t
       | Custom (_, _, t) | Drawer (_, t) | Quote t -> self#blocks v t
@@ -101,7 +101,7 @@ class ['a] folder =
        |Example _ | Math _ | Directive _ ->
           v
 
-    method list_item v {contents} = self#blocks v contents
+    method list_item v {contents; _} = self#blocks v contents
   end
 
 class virtual ['a] bottomUp =
@@ -116,7 +116,7 @@ class virtual ['a] bottomUp =
       | Table t ->
           let combine_arr f = self#combine % Array.to_list % Array.map f in
           combine_arr (combine_arr (combine_arr self#inlines)) t.rows
-      | List (l, b) -> self#combine (List.map self#list_item l)
+      | List (l, _b) -> self#combine (List.map self#list_item l)
       | Paragraph i | Footnote_Definition (_, i) -> self#inlines i
       | With_Keywords (_, t) -> self#block t
       | Custom (_, _, t) | Drawer (_, t) | Quote t -> self#blocks t
@@ -124,7 +124,7 @@ class virtual ['a] bottomUp =
        |Example _ | Math _ | Directive _ ->
           self#bot
 
-    method list_item {contents} = self#blocks contents
+    method list_item {contents; _} = self#blocks contents
   end
 
 class virtual ['a, 'b] bottomUpWithArg =
@@ -139,7 +139,7 @@ class virtual ['a, 'b] bottomUpWithArg =
       | Table t ->
           let combine_arr f = self#combine % Array.to_list % Array.map f in
           combine_arr (combine_arr (combine_arr (self#inlines arg))) t.rows
-      | List (l, b) -> self#combine (List.map (self#list_item arg) l)
+      | List (l, _b) -> self#combine (List.map (self#list_item arg) l)
       | Paragraph i | Footnote_Definition (_, i) -> self#inlines arg i
       | With_Keywords (_, t) -> self#block arg t
       | Custom (_, _, t) | Drawer (_, t) | Quote t -> self#blocks arg t
@@ -147,5 +147,5 @@ class virtual ['a, 'b] bottomUpWithArg =
        |Example _ | Math _ | Directive _ ->
           self#bot
 
-    method list_item arg {contents} = self#blocks arg contents
+    method list_item arg {contents; _} = self#blocks arg contents
   end

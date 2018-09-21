@@ -33,13 +33,13 @@ and t =
 
 let update_vars x f = {x with vars= f x.vars}
 
-let update_collection x f = {x with collection= f x.collection}
+(* let update_collection x f = {x with collection= f x.collection} *)
 
-let update_typ x f = {x with typ= f x.typ}
+(* let update_typ x f = {x with typ= f x.typ} *)
 
-let update_format x f = {x with format= f x.format}
+(* let update_format x f = {x with format= f x.format} *)
 
-let update_output x f = {x with output= f x.output}
+(* let update_output x f = {x with output= f x.output} *)
 
 let update_file x f = {x with file= f x.file}
 
@@ -194,7 +194,7 @@ let whd_ table l x =
 
 let whd_opt l x = if l = [] then x else Some (List.hd l)
 
-let whd_bool = whd_map (function "yes" -> true | "no" -> false)
+let whd_bool = whd_map (function "yes" -> true | _ -> false)
 
 let ( @|@ ) g f l x = g x (f l)
 
@@ -269,7 +269,7 @@ let options =
   ; ("hlines", update_hlines @|@ whd_bool)
   ; ( "colnames"
     , update_colnames
-      @|@ whd_map (function "yes" -> Some true | "no" -> Some false) )
+      @|@ whd_map (function "yes" -> Some true | _ -> Some false) )
   ; ("rownames", update_rownames @|@ whd_bool)
   ; ("shebang", update_shebang @|@ whd_opt)
   ; ( "eval"

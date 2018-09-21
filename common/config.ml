@@ -215,7 +215,7 @@ let concat configs =
 (* this takes a config and a list of string * string
    an existing instance, and create a composed instance *)
 
-let append list ({config} as instance) =
+let append list ({config; _} as instance) =
   let hashtbl = Hashtbl.create (Hashtbl.length config) in
   let compute (type u) (item : u item) vars =
     let module I = (val item : Item with type t = u) in
@@ -247,9 +247,10 @@ let append list ({config} as instance) =
       !I.tmp
     with Not_found -> compute item vars
   in
-  {get= (fun (type u) ?(vars = []) item -> lookup item vars); config}
+  {get= (fun (type _u) ?(vars = []) item -> lookup item vars); config}
 
-let default config = {get= (fun (type u) ?(vars = []) i -> None); config}
+let default config =
+  {get= (fun (type _u) ?(vars = []) i -> ignore vars ; ignore i ; None); config}
 
 let make config list = append list (default config)
 
@@ -291,9 +292,9 @@ let to_man config =
          let spr = Printf.sprintf in
          let module I = (val i : Item) in
          let s = I.T.show I.default in
-         let l = lines s in
+         let _l = lines s in
          let esc = escape ["\\"] in
-         let s' = if s = "" then "" else "=" ^ escape ["="] s ^ "=" in
+         let _s' = if s = "" then "" else "=" ^ escape ["="] s ^ "=" in
          let variables =
            I.variables
            |> List.map (fun {var_name; var_descr} ->

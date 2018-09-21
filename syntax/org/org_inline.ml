@@ -7,13 +7,13 @@ open Substring
 open Inline_combinators
 
 (* chars because occurences make identation screw up *)
-let obracket, cbracket = ('[', ']')
+let obracket, _cbracket = ('[', ']')
 
-let ochev, cchev = ('<', '>')
+let ochev, _cchev = ('<', '>')
 
 let oparen, cparen = ('(', ')')
 
-let obrace, cbrace = ('{', '}')
+let obrace, _cbrace = ('{', '}')
 
 let delim_table =
   [ ('[', (']', false))
@@ -25,6 +25,15 @@ let delim_table =
   ; ('~', ('~', false))
   ; ('$', ('$', true))
   ; ('=', ('=', true))
+  ; ('/', ('/', false)) ]
+
+let link_delim_table =
+  [ ('[', (']', false))
+  ; ('<', ('>', false))
+  ; ('{', ('}', false))
+  ; ('(', (')', false))
+  ; ('*', ('*', false))
+  ; ('$', ('$', true))
   ; ('/', ('/', false)) ]
 
 let inside = inside delim_table
@@ -157,7 +166,7 @@ let link_inline_parser _ rest =
     until_space (fun c -> c = ':' || not (Char.is_letter c)) rest
   in
   let rest = see "://" rest in
-  let pred = no_delim_capture delim_table in
+  let pred = no_delim_capture link_delim_table in
   let link, rest = until_space (fun c -> not (pred c)) rest in
   Some
     ( [ Link
@@ -175,8 +184,8 @@ let macro_parser _ rest =
   let name, contents = until (( = ) oparen) contents in
   let name = trim name in
   let contents = see "(" contents in
-  let arguments, contents = until (( = ) cparen) contents in
-  Some ([Macro (name, List.map trim (nsplit arguments ","))], rest)
+  let arguments, _contents = until (( = ) cparen) contents in
+  Some ([Macro (name, List.map trim (nsplit arguments ~by:","))], rest)
 
 (** {2 Radio Target parser} *)
 let radio_target_parser _ rest =

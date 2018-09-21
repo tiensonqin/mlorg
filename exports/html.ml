@@ -68,56 +68,6 @@ module H = struct
 
       method combine = List.concat
 
-      method wrap d contents =
-        let style_files =
-          Config.get config style
-          :: List.filter_map
-               (fun (a, b) -> if a = "STYLE" then Some b else None)
-               d.directives
-        in
-        let make_style url =
-          Xml.block "link" []
-            ~attr:
-              [ ("rel", "stylesheet")
-              ; ("href", url)
-              ; ("type", "text/css")
-              ; ("media", "screen") ]
-        in
-        let head =
-          Xml.block "head"
-            [ Xml.block "title" [Xml.data d.title]
-            ; Xml.block "meta"
-                ~attr:
-                  [ ("http-equiv", "Content-Type")
-                  ; ("content", "text/html")
-                  ; ("charset", Config.get config encoding) ]
-                []
-            ; ( if !mathjax_used then
-                Xml.block "script"
-                  ~attr:
-                    [ ("type", "text/javascript")
-                    ; ("src", Config.get config mathjax_url) ]
-                  [Xml.raw ""]
-              else Xml.empty )
-            ; Xml.block "style" ~attr:[("type", "text/css")]
-                [ Xml.data
-                    ( if Config.get config use_pygments then
-                      try Pygments.style_def config "html" with _ -> ""
-                    else "" ) ]
-            ; Xml.list
-                (flip List.map (Config.get config js_files) (fun filename ->
-                     Xml.block "script"
-                       ~attr:[("type", "text/javascript"); ("src", filename)]
-                       [Xml.raw ""] ))
-            ; Xml.list (List.map make_style style_files)
-            ; Xml.block "script"
-                ~attr:[("type", "text/javascript")]
-                [Xml.raw (Config.get config inline_js)] ]
-        in
-        Xml.block "html"
-          ~attr:[("xmlns", "http://www.w3.org/1999/xhtml")]
-          [head; Xml.block "body" contents]
-
       method handle_image_link url href label =
         match url with
         | Complex {protocol; link} ->
@@ -182,17 +132,6 @@ module H = struct
                 "li"
                 (Xml.data (number ^ " ") :: contents) ]
 
-      method fancylink h =
-        let target, descr =
-          match h.father with
-          | Some {anchor; name} -> (Toc.link anchor, Inline.asciis name)
-          | None -> ("content", "Come back at the top of the page")
-        in
-        Xml.block "span" ~attr:[("style", "float:right")]
-          [ Xml.block "a"
-              ~attr:[("title", descr); ("href", "#" ^ target)]
-              [Xml.data "↑"] ]
-
       method block =
         function
         | Paragraph l -> [Xml.block "p" (self#inlines l)]
@@ -235,7 +174,7 @@ module H = struct
         Xml.block
           (Printf.sprintf "h%d" d.level)
           ~attr:[("id", Toc.link d.anchor)]
-          (self#inlines d.name @ [self#fancylink d])
+          (self#inlines d.name)
         :: (self#blocks d.content @ concatmap self#heading d.children)
 
       method document d =
@@ -255,10 +194,7 @@ module H = struct
       if Config.get config use_math2png then Math2png.transform config doc
       else doc
     in
-    if Config.get config full then (
-      IO.nwrite out doctype ;
-      Xml.output_xhtml out [o#wrap doc (o#document doc)] )
-    else Xml.output_xhtml out (o#document doc)
+    Xml.output_xhtml out (o#document doc)
 
   module E = struct
     let export config doc =

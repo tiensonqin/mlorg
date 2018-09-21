@@ -1,4 +1,3 @@
-open Prelude
 open Batteries
 
 type t =
@@ -34,7 +33,7 @@ let output_string_rewrite fd s =
     | c -> IO.write fd c
   done
 
-let rec output_attribs fd =
+let output_attribs fd =
   let write (name, value) =
     Printf.fprintf fd "%s=\"" name ;
     output_string_rewrite fd value ;
@@ -47,7 +46,7 @@ let rec output_attribs fd =
   in
   aux
 
-let rec indent fd num = IO.nwrite fd (String.make num ' ')
+let indent fd num = IO.nwrite fd (String.make num ' ')
 
 let output_lines ?(rewrite = true) fd indent_level lines =
   match Prelude.lines lines with
@@ -97,7 +96,7 @@ let output ?(offset = 0) fd inlines prep_inlines exceptions space_significants
             && ( (not (List.mem name prep_inlines))
                || List.exists
                     (function
-                      | Block (k, _, child) -> List.mem k prep_inlines
+                      | Block (k, _, _child) -> List.mem k prep_inlines
                       | _ -> false)
                     children )
           then (

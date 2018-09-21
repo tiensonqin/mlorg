@@ -29,12 +29,8 @@ class htmlExporter :
 
        method bot : Xml.t list
 
-       method fancylink : Document.heading -> Xml.t
-
        method handle_image_link :
          Inline.url -> string -> Inline.t list -> Xml.t list
-
-       method wrap : Document.t -> Xml.t list -> Xml.t
 
        method combine : Xml.t list list -> Xml.t list
      end

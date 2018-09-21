@@ -51,7 +51,8 @@ let rec run_parsers plain parsers string =
   aux 0 [] substring
 
 (** {2 Interesting routines} *)
-open Option
+
+(* open Option *)
 
 let inside table delim rest =
   let module D = Delimiters.Make (struct

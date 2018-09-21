@@ -1,4 +1,3 @@
-open Prelude
 open Batteries
 module Substring = BatSubstring
 
@@ -90,7 +89,7 @@ class ['a] folder =
   object (self)
     method inline (v : 'a) =
       function
-      | Emphasis (a, b) -> self#inlines v b
+      | Emphasis (_a, b) -> self#inlines v b
       | List l -> self#inlines v l
       | Footnote_Reference ref ->
           Option.map_default (self#inlines v) v ref.definition
@@ -114,7 +113,7 @@ class virtual ['a] bottomUp =
     method inline =
       function
       | List l -> self#inlines l
-      | Emphasis (a, b) -> self#inlines b
+      | Emphasis (_a, b) -> self#inlines b
       | Footnote_Reference ref ->
           Option.map_default self#inlines self#bot ref.definition
       | Link l -> self#inlines l.label
@@ -137,10 +136,10 @@ class virtual ['a, 'b] bottomUpWithArg =
     method inline (arg : 'b) =
       function
       | List l -> self#inlines arg l
-      | Emphasis (a, b) -> self#inlines arg b
+      | Emphasis (_a, b) -> self#inlines arg b
       | Footnote_Reference ref ->
           Option.map_default (self#inlines arg) self#bot ref.definition
-      | Link {label= t} | Subscript t | Superscript t -> self#inlines arg t
+      | Link {label= t; _} | Subscript t | Superscript t -> self#inlines arg t
       | Macro _ | Radio_Target _ | Verbatim _ | Cookie _ | Timestamp _
        |Plain _ | Inline_Call _ | Inline_Source_Block _ | Latex_Fragment _
        |Break_Line | Target _ | Export_Snippet _ | Entity _ ->
@@ -163,7 +162,7 @@ let rec ascii = function
   | Verbatim s -> s
   | Cookie _ -> ""
   | Timestamp _ -> ""
-  | Target s -> ""
+  | Target _s -> ""
   | Latex_Fragment (Math s) | Plain s -> s
   | Latex_Fragment (Command (s, s')) -> "\\" ^ s ^ "{" ^ s' ^ "}"
   | Inline_Call _ -> ""

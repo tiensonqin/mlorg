@@ -1,5 +1,4 @@
 open Batteries
-open Prelude
 
 type date = {year: int; month: int; day: int}
 
@@ -25,7 +24,7 @@ let min_opt t = Option.map_default (fun x -> Some x.min) None t.time
 
 let null_date = {year= 0; month= 0; day= 0}
 
-let null_time = {min= 0; hour= 0}
+(* let null_time = {min= 0; hour= 0} *)
 
 let null = {date= null_date; time= None; repetition= None; active= true}
 
@@ -160,7 +159,7 @@ let from_now t =
   duration {start= t; stop= from_tm (Unix.localtime (Unix.time ()))}
 
 let string_of_seconds n =
-  let mins, secs = (n / 60, n mod 60) in
+  let mins, _secs = (n / 60, n mod 60) in
   let hours, mins = (mins / 60, mins mod 60) in
   Printf.sprintf "%02d:%02d" hours mins
 

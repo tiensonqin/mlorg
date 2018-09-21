@@ -1,4 +1,3 @@
-open Prelude
 open Batteries
 
 exception Failed of string * string

@@ -1,9 +1,9 @@
 open Batteries
 
 (* *)
-let words s = String.nsplit s " "
+let words s = String.nsplit s ~by:" "
 
-let lines s = String.nsplit s "\n"
+let lines s = String.nsplit s ~by:"\n"
 
 (* *)
 let filteri f s =
@@ -34,11 +34,11 @@ let escape chars s =
 let change_ext ext file =
   if file = "-" then file else Filename.chop_extension file ^ "." ^ ext
 
-let rec concat_fmt f sep ppf l =
-  match l with
-  | [] -> ()
-  | [x] -> f ppf x
-  | t :: q -> Format.fprintf ppf "%a%s%a" f t sep (concat_fmt f sep) q
+(* let rec concat_fmt f sep ppf l =
+ *   match l with
+ *   | [] -> ()
+ *   | [x] -> f ppf x
+ *   | t :: q -> Format.fprintf ppf "%a%s%a" f t sep (concat_fmt f sep) q *)
 
 let substitute f s =
   let b = Buffer.create (String.length s) in

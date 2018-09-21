@@ -58,11 +58,10 @@ module Make (T : Table) = struct
       match closing_delimiter ?valid string ~k:1 delimiter with
       | None -> None
       | Some k ->
-          let s, a, b = base string in
+          let s, a, _b = base string in
           Some (Batteries.String.sub s (a + 1) (k - 1), triml (k + 1) string)
 
   let split ?valid string delimiter =
-    let open Prelude in
     let sub s l = to_string (trimr (size s - l) s) in
     let rec aux acc string =
       match closing_delimiter ?valid string delimiter with
