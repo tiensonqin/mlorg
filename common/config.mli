@@ -14,7 +14,7 @@
 (** The implementation is as follows. Configuration items are based on
     {!SerializableType}s: types with [show]/[read] functions. Each item has such
     a type, a name, a description, and a default value of this type.
-    
+
     Then an interface is basically a list of those items. A realization is a
     polymorphic function of type ['a. 'a Item -> 'a] that for any item returns a
     value of that type. The intuition is that for items on which the instance is
@@ -46,7 +46,7 @@ end
 type 'a serializable = (module SerializableType with type t = 'a)
 (** An alias to hide the module *)
 
-(** Some instances of SerializableType for most common types: *)  
+(** Some instances of SerializableType for most common types: *)
 
 val int : int serializable
 (** Serializable instance for integers *)
@@ -97,6 +97,7 @@ val concat : (string * t) list -> t
     returns a configuration where item names have been prefixed by the name of
     the parent configuration with a dot between them.
 *)
+
 type instance
  (** An instance of a configuration -- defining a value of a finite number of
      item. *)

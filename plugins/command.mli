@@ -1,6 +1,6 @@
 (** Running command and capturing output. *)
 exception Failed of string * string
-(** Exception raised by [run] when the command did not exit successfully (ie. returned 0).
+   (** Exception raised by [run] when the command did not exit successfully (ie. returned 0).
     The first argument is the command that failed, and the second argument the content of stderr *)
 
 val run : ?feed:string list -> string -> string

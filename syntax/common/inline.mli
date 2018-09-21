@@ -13,7 +13,7 @@ This is the list of possible elements:
 - inline source block : [src_lang[arg]\{contents\}]
 - latex fragment : [$foo$] or [\foo{}]
 - line break : =\\\\= at the end of a line
-- link : =[[descr][target]]= 
+- link : =[[descr][target]]=
 - macro : text substitution [{{{name(arg1, arg2)}}}]. Documentation [[http://orgmode.org/manual/Macro-replacement.html][here]].
 - radio target : special links  [<<<target>>>]
 - targets : anchors [<<anchor>>]
@@ -42,6 +42,7 @@ Indeed for some categories (link, emphasis, ...) we need to embded inline conten
 *)
 
 (** {2 Emphasis} *)
+
 (** org supports three types of emphasis :
 - bold (with stars : [*foo*])
 - italic (with slashes : [/foo/])
@@ -50,11 +51,13 @@ Indeed for some categories (link, emphasis, ...) we need to embded inline conten
 type emphasis = [`Bold | `Italic | `Underline] * t list
 
 (** {2 Entities} *)
+
 (** Entity are defined in the module {!Entity}. *)
 
 and entity = Entity.t
 
 (** {2 Export snippett} *)
+
 (** An export snippet is given by a couple [(language, text)].*)
 
 and export_snippet = string * string
@@ -88,7 +91,7 @@ and inline_source_block = {
 
 (** {2 Latex fragments} *)
 
-and latex_fragment = 
+and latex_fragment =
   | Math of string (** A formula: $x+1$ *)
   | Command of string * string (** A command: [\command{argument}] *)
 
@@ -96,7 +99,7 @@ and latex_fragment =
 (** Links are composed of two parts : an url and a label.
     An url may be pointed to a file, to a search or to an actual url *)
 
-and url = 
+and url =
   | File of string (** The link refers to a local file *)
   | Search of string (** The link refers to a heading in the document *)
   | Complex of complex (** The link refers to an URI *)
@@ -104,7 +107,7 @@ and complex = {
   protocol: string; (** The protocol of the URI *)
   link: string (** The data *)
 }
-    
+
 and link = {
   url: url; (** URL which the link refers to. *)
   label: t list; (** The label, containing inline contents *)
@@ -112,22 +115,22 @@ and link = {
 
 (** {2 Cookies} *)
 
-(** Cookies are a way to indicate the progress of a task. 
+(** Cookies are a way to indicate the progress of a task.
     They can be of two form : percentage or absolute value *)
-and stats_cookie = 
+and stats_cookie =
   | Percent of int
   | Absolute of int * int (** current, max *)
 
 
 (** {2 Timestamps} *)
 
-(** A clock item-- either stopped or 
+(** A clock item-- either stopped or
     started *)
-and clock_item = 
+and clock_item =
   | Started of Timestamp.t
   | Stopped of Timestamp.range
 
-and timestamp = 
+and timestamp =
   | Scheduled of Timestamp.t
   | Deadline of Timestamp.t
   | Date of Timestamp.t
@@ -136,9 +139,10 @@ and timestamp =
   | Range of Timestamp.range
 
 (** {2 The type of inline contents} *)
+
 (** The final type for {!Inline.t} is as follows: *)
-and t = 
-  | Emphasis of emphasis 
+and t =
+  | Emphasis of emphasis
   | Entity of entity
   | Export_Snippet of export_snippet
   | Footnote_Reference of footnote_reference
@@ -178,12 +182,16 @@ class virtual ['a] bottomUp :
 object
   method virtual bot : 'a
   (** The default value for leaf *)
+
   method virtual combine : 'a list -> 'a
   (** Combining a list of result *)
+
   method inline : t -> 'a
   (** Traverse a single element *)
+
   method inlines : t list -> 'a
-(** Traverse a list of elements and combine their results *)
+  (** Traverse a list of elements and combine their results *)
+
 end
 (** Implements a bottom up traversal of the tree
     where contents is created from the leaf and propagated upward.
@@ -193,17 +201,21 @@ class virtual ['a, 'b] bottomUpWithArg :
 object
   method virtual bot : 'a
   (** The default value for leaf *)
+
   method virtual combine : 'a list -> 'a
   (** Combining a list of result *)
+
   method inline : 'b -> t -> 'a
   (** Traverse a single element *)
+
   method inlines : 'b -> t list -> 'a
-(** Traverse a list of elements and combine their results *)
+  (** Traverse a list of elements and combine their results *)
 end
 (** As bottomUp but this can take an argument that is propaged downwards.
     This is very useful for exporters *)
 
 (** {1 Useful tools about inline} *)
+
 val ascii : t -> string
 val asciis : t list -> string
 (** Convert inline contents to plain ascii *)

@@ -9,9 +9,8 @@
  *)
 
 (** {1 Numbering system} *)
-type system = { encode : int -> string;
-                decode : string -> int option * string }
-(** A numbering system is just a way to (de)encode a number.  To decode, it
+type system = {encode: int -> string; decode: string -> int option * string}
+ (** A numbering system is just a way to (de)encode a number.  To decode, it
     should work only on partial strings and thus should return the non-used
     characters *)
 
@@ -19,7 +18,7 @@ type system = { encode : int -> string;
 
 (** We provide here two main ways to define systems : alphabetical and romain *)
 
-val alphabetic_sys : ?nozero: bool -> string array -> system
+val alphabetic_sys : ?nozero:bool -> string array -> system
 (** Creates an alphabetic system. For instance [alphabetic_sys ["0"; ..; "9"]]
     creates the decimal system.
     @param nozero: tell whether 0 is an reachable value (for instance, with the usual alphabet, you don't want it since you want a = 1)
@@ -29,17 +28,16 @@ val romain_sys : string array -> system
 (** Creates a romain system. For instance [romain_sys [|"I"; "V"; "X"; "L"; "C"; "D"; "M"|]]
     creates the usual romain numbering. *)
 
-module Systems : ExtList.ExtList with type elt = system
 (** The list of numbering systems. Contains decimal system, romain both
     uppercase and lowercase, alphabetic (latin and greek) systems, both
     uppercase and lowercase. *)
-
+module Systems : ExtList.ExtList with type elt = system
 
 val extract : string -> int list
 (** Extracts the number appearing in a string.
     For instance [extract "I.i"] returns [[1; 1]] *)
 
-val update : ?trunc : bool -> string -> int list -> string
+val update : ?trunc:bool -> string -> int list -> string
 (** Updates a format. For instance [update "I.i" [2; 2]] returns ["II.ii"].  If
     [trunc] is set to true (default: false) then the string is truncate when all
     the numbers in the list have been consumed.

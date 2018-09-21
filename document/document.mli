@@ -5,9 +5,9 @@
 open Batteries
 open Prelude
 
-(** {1 Type definitions} *) 
+(** {1 Type definitions} *)
 
-type meta = { 
+type meta = {
   timestamps : Timestamp.t list;
   (** The plain timestamps appearing in the heading *)
   ranges     : Timestamp.range list;
@@ -41,7 +41,7 @@ type heading = {
 }
 (** A heading in a document *)
 
-type t = { 
+type t = {
   filename : string;
   (** The filename the document was parsed from *)
   beginning : Block.t list;
@@ -61,7 +61,7 @@ type t = {
   author: string;
   (** The document's author *)
 }
-(** 
+(**
     A document is:
     - some content before the first heading
     - a list of top-level headings
@@ -71,7 +71,7 @@ type t = {
     - the options for extensions on this document. Note that this cover as well
       options for exporters that do not appear in [exts]
 *)
-    
+
 (** {1 Mapping and folding} *)
 
 (** In this section we define document traversal. The idea is to be able to
@@ -112,7 +112,7 @@ end
 val config : Config.t
 (** The configuration for the from_* functions *)
 
-(** {1 Parsing documents} *)    
+(** {1 Parsing documents} *)
 
 val directives : Block.t list -> (string * string) list
 (** Return the directives of a list of blocks *)
@@ -123,9 +123,11 @@ val opts : Block.t list -> (string * string) list
 val from_chan : ?config: Config.instance -> string -> BatIO.input -> t * Config.instance
 (** From an input (the second argument is the filename).
     Returns a new instance updated with the parameter defined in the document.
- *)
+*)
+
 val from_file  : ?config: Config.instance -> string -> t * Config.instance
 (** From a file *)
+
 val from_fun : ?config: Config.instance -> string -> (unit -> string option) -> t * Config.instance
 (** From a function *)
 
@@ -139,7 +141,7 @@ val name : heading -> string
 
 val father : heading -> heading option
 (** Returns the father of a heading *)
- 
+
 val prop_val : string -> heading -> string option
 (** Returns the value of a property *)
 
@@ -206,7 +208,3 @@ val heading: ?timestamps: Timestamp.t list ->
     [content]. So, make sure [content] does not contain already a
     property drawer. (Otherwise you will have two of them)
 *)
-
-
-
-

@@ -14,27 +14,30 @@
     - it is not surrounded by space
 *)
 
-module type Table = sig
-  val table : (char * (char * bool)) list
-end
 (** A table, composed of elements of the form [(opening, (closing, quote))].
     If [quote] is true it means that the contents held inside this delimiter is to be quoted
     and you don't have to look for delimiters inside.
 *)
+module type Table = sig
+  val table : (char * (char * bool)) list
+end
+
 module Make (T : Table) : sig
-  val enclosing_delimiter : ?valid: bool -> BatSubstring.t -> char -> (string * BatSubstring.t) option
+  val enclosing_delimiter :
+    ?valid:bool -> BatSubstring.t -> char -> (string * BatSubstring.t) option
   (** [enclosing_delimiter s c] expects a substring starting by [c]. It will
       search for the end of the delimited string. On success it will return the
       delimited string along with rest of the substring following the closing
       delimiter. Otherwise it will return [None]. [valid] is used to tell if you require that the closing delimiter should be valid. *)
 
-  val split : ?valid: bool -> BatSubstring.t -> char -> string list
+  val split : ?valid:bool -> BatSubstring.t -> char -> string list
   (** [split sub c] will split [sub] along the closing delimiter corresponding
       to [c] *)
 
   val closing_delimiter : char -> char option
   (** Given a char [c] returns the corresponding closing delimiter
       corresponding to [c] if it exists *)
+
   val starting_delimiter : char -> char option
   (** Given a char [c] returns the corresponding closing delimiter
     corresponding to [c] if it exists *)

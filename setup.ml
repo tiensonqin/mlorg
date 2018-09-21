@@ -27,6 +27,8 @@
 open OASISDynRun
 
 let setup_t = BaseCompat.Compat_0_4.adapt_setup_t setup_t
+
 open BaseCompat.Compat_0_4
+
 (* OASIS_STOP *)
-let () = setup ();;
+let () = setup ()

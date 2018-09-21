@@ -5,35 +5,25 @@
 
 (** {3 Definitions} *)
 
-type date = {
-  year: int;
-  month: int;
-  day: int;
-}
 (** A date. *)
+type date = {year: int; month: int; day: int}
 
-type time = {
-  hour: int;
-  min: int;
-}
 (** A time. No seconds in org-mode's timestamps *)
+type time = {hour: int; min: int}
 
-type t = {
-  date: date;
-  time: time option;
-  repetition: date option;
-(** The date to wait for the event to start again, eg. [+1w] corresponds to
-    seven days *)
-  active : bool;
-(** Is the timestamp active ? [<timestamp>] is active and shows up in the agenda where [[timestamp]] isn't. *)
-}
 (** A timestamp. time and repetition are optional. *)
+type t =
+  { date: date
+  ; time: time option
+  ; repetition: date option
+        (** The date to wait for the event to start again, eg. [+1w] corresponds to
+    seven days *)
+  ; active: bool
+        (** Is the timestamp active ? [<timestamp>] is active and shows up in the agenda where [[timestamp]] isn't. *)
+  }
 
-type range = {
-  start: t;
-  stop: t;
-}
 (** A timestamp range: a beginning and an end *)
+type range = {start: t; stop: t}
 
 (** {3 A few accessors} *)
 
@@ -48,11 +38,13 @@ val day : t -> int
 
 val hour : t -> int
 (** Get the hour of a timestamp (0 if not set) *)
+
 val min : t -> int
 (** Get the minute of a timestamp (0 if not set) *)
 
 val hour_opt : t -> int option
 (** Get the optional hour of a timestamp *)
+
 val min_opt : t -> int option
 (** Get the optional minute of a timestamp *)
 
@@ -64,7 +56,7 @@ val null : t
 val to_tm : t -> Unix.tm
 (** Converts a timestamp into an {!Unix.tm} *)
 
-val from_tm : ?active : bool -> Unix.tm -> t
+val from_tm : ?active:bool -> Unix.tm -> t
 (** Converts a {!Unix.tm} to a timestamp, by normalizing it before.
     This is always set a time and no repetition *)
 
@@ -89,7 +81,7 @@ val parse_substring : BatSubstring.t -> (t * BatSubstring.t) option
 val parse_range_substring : BatSubstring.t -> (range * BatSubstring.t) option
 (** Parse a substring as a range *)
 
-val to_string : ?wday: string array -> t -> string
+val to_string : ?wday:string array -> t -> string
 (** Converts a timestamp to a string.
     The optional array wday specifies the name of the weekday
 *)
@@ -101,7 +93,6 @@ val range_to_string : range -> string
 
 val seconds_of_t : t -> float
 (** Returns the number of seconds denoted by a timestamp (since EPOCH) *)
-
 
 val duration : range -> int
 (** Returns the duration of a timestamp range, in seconds *)

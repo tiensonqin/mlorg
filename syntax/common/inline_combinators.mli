@@ -1,14 +1,16 @@
 (** Combinators for easy Inline parsing *)
 
 (** {1 Parsers} *)
+
 (** This section deals with defining what a parser for a construction is. *)
 
-type 'a parser = (string -> 'a list) -> BatSubstring.t -> ('a list * BatSubstring.t) option
-  (** A parser simply a function taking a [BatSubstring.t] and returning an option of
+(** A parser simply a function taking a [BatSubstring.t] and returning an option of
       [t list]. The parser takes an extra parameter, a function to parse a
       string and return a list of tokens ['a]. The function may as well throw an
       exception.
   *)
+type 'a parser =
+  (string -> 'a list) -> BatSubstring.t -> ('a list * BatSubstring.t) option
 
 val run_parsers : (string -> 'a) -> 'a parser list -> string -> 'a list
 (** Run a list of parsers over a string and returned the generated contents.
@@ -18,14 +20,21 @@ val run_parsers : (string -> 'a) -> 'a parser list -> string -> 'a list
  *)
 
 (** {1 Combinators} *)
-val inside : (char * (char * bool)) list -> char -> 
-  BatSubstring.t -> string option * BatSubstring.t
+
+val inside :
+     (char * (char * bool)) list
+  -> char
+  -> BatSubstring.t
+  -> string option * BatSubstring.t
 (** [inside table delim rest] uses [table] as its delimiter table to
     fetch the closing delimiter of [delim] and returns [Some string_in_between, rest]
     if such a closing occurence is found or [None, rest] otherwise *)
 
-val inside_force : (char * (char * bool)) list -> char -> 
-  BatSubstring.t -> string * BatSubstring.t
+val inside_force :
+     (char * (char * bool)) list
+  -> char
+  -> BatSubstring.t
+  -> string * BatSubstring.t
 (** [inside_force] behaves similarly to {!inside} but instead of returning [None], it throws an exception *)
 
 val see : string -> BatSubstring.t -> BatSubstring.t
