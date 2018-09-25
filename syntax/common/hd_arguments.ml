@@ -288,9 +288,8 @@ let parse string =
   List.fold_left
     (fun x (name, args) ->
       try List.assoc name options args x with
-      | Not_found ->
-          Log.warning "Ignored unkonwn option %s" name ;
-          x
+      | Not_found -> (* Log.warning "Ignored unknown option %s" name ; *)
+                     x
       | _ -> x )
     {default with arguments= args}
     args

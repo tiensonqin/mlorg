@@ -1,17 +1,6 @@
 (** Interface to pygments *)
 
-(** An option for pygments *)
-type option =
-  | Lineno  (** Write line number *)
-  | Other of string * string  (** Custom options *)
-
-val color :
-     ?options:option list
-  -> Config.instance
-  -> string
-  -> string
-  -> string list
-  -> string
+val color : Config.instance -> string -> string -> string list -> string
 (** [color config lexer formatter lines] invokes pygments on the code denoted by [lines],
     with the output formatter [formatter], and lexer [lexer]. *)
 

@@ -9,6 +9,7 @@ open Plugin
 open Config
 open Xml
 
+(* TODO: heading tags *)
 module E = struct
   let name = "xml"
 

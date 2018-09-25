@@ -1,4 +1,4 @@
-#+TITLE: 很酷，我喜欢这个
+#+TITLE: A short tutorial on writing org-mode document compatible with mlorg
 #+AUTHOR: Simon Castellan
 #+EMAIL: simon.castellan@iuwt.fr
 

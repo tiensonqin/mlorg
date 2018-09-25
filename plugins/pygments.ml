@@ -3,10 +3,6 @@ open Batteries
 open Config
 open Plugin
 
-type option =
-  | Lineno  (** Write line number *)
-  | Other of string * string  (** Custom options *)
-
 module P = struct
   let name = "pygments"
 
@@ -18,7 +14,7 @@ module P = struct
 
   let binary =
     Config.add config "command" string "The command to run to invoke pygments"
-      "pygmentize -f $formatter -l $lexer -O $options"
+      "pygmentize -f $formatter -l $lexer"
       ~vars:
         [ make_var "formatter"
             "the name of the output format to use (eg. latex or html)"
@@ -39,18 +35,10 @@ end
 
 let () = Plugin.General.add (module P : Plugin with type interface = unit)
 
-let string_of_option = function
-  | Lineno -> "linenos=1"
-  | Other (a, b) -> Printf.sprintf "%s=%s" a b
-
-let color ?(options = []) config lexer formatter lines =
-  let options_string = String.concat "," (List.map string_of_option options) in
+let color config lexer formatter lines =
   let command =
     substitute
-      (flip List.assoc
-         [ ("formatter", formatter)
-         ; ("options", options_string)
-         ; ("lexer", lexer) ])
+      (flip List.assoc [("formatter", formatter); ("lexer", lexer)])
       (Config.get config P.binary)
   in
   Command.run ~feed:lines command

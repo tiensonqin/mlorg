@@ -29,6 +29,10 @@ class htmlExporter :
 
        method bot : Xml.t list
 
+       method range : Timestamp.range -> bool -> Xml.t
+
+       method timestamp : Timestamp.t -> string -> Xml.t
+
        method handle_image_link :
          Inline.url -> string -> Inline.t list -> Xml.t list
 

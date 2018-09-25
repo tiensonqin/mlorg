@@ -137,8 +137,7 @@ let repetition_to_string d =
   else if d.day <> 0 then Printf.sprintf "+%dd" d.day
   else "+0d"
 
-let to_string
-    ?(wday = [|"sun."; "mon."; "tue."; "wed"; "thu."; "wed."; "sat."|]) t =
+let to_string ?(wday = [|"Sun"; "Mon"; "Tue"; "Wed"; "Thu"; "Wed"; "Sat"|]) t =
   Printf.sprintf "%c%s%c"
     (if t.active then '<' else '[')
     ( [ Some (date_to_string t.date)

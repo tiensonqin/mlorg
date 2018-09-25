@@ -1,3 +1,4 @@
+open Timestamp
 open Xml
 open Prelude
 open Entity
@@ -13,6 +14,8 @@ module H = struct
 
   let config = Config.create ()
 
+  let opt_attr name = function Some v -> [(name, v)] | None -> []
+
   let encoding =
     Config.add config "encoding" string "The document's encoding" "utf-8"
 
@@ -25,7 +28,7 @@ module H = struct
 
   let number_lines =
     Config.add config "number-lines" boolean
-      "Shall lines be numbered inside code blocks" true
+      "Shall lines be numbered inside code blocks" false
 
   let use_math2png =
     Config.add config "use-math2png" boolean
@@ -116,7 +119,46 @@ module H = struct
         | Export_Snippet ("html", s) -> [Xml.raw s]
         | Break_Line -> [Xml.block "br" []]
         | Target s -> [Xml.block "a" ~attr:[("id", s)] []]
+        | Timestamp (Scheduled t) -> [self#timestamp t "Scheduled"]
+        | Timestamp (Deadline t) -> [self#timestamp t "Deadline"]
+        | Timestamp (Date t) -> [self#timestamp t "Date"]
+        | Timestamp (Range t) -> [self#range t false]
+        | Timestamp (Closed t) -> [self#timestamp t "Closed"]
+        | Timestamp (Clock (Stopped t)) -> [self#range t true]
+        | Timestamp (Clock (Started t)) -> [self#timestamp t "Started"]
         | x -> super#inline x
+
+      method range {start; stop} stopped =
+        Xml.block "div"
+          ~attr:
+            [("class", "timestamp-range"); ("stopped", string_of_bool stopped)]
+          [self#timestamp start "Start"; self#timestamp stop "Stop"]
+
+      method timestamp ({active; date; time; repetition} as t) kind =
+        let prefix =
+          match kind with
+          | "Scheduled" ->
+              Xml.raw
+                "<i class=\"fa fa-calendar\" style=\"margin-right:6px;\"></i>"
+          | "Deadline" ->
+              Xml.raw
+                "<i class=\"fa fa-calendar-times-o\" \
+                 style=\"margin-right:6px;\"></i>"
+          | "Date" -> Xml.empty
+          | "Closed" -> Xml.empty
+          | "Started" ->
+              Xml.raw
+                "<i class=\"fa fa-clock-o\" style=\"margin-right:6px;\"></i>"
+          | "Start" -> Xml.data "From: "
+          | "Stop" -> Xml.data "To: "
+        in
+        Xml.block "span"
+          ~attr:
+            [ ( "class"
+              , "timestamp " ^ if kind = "Closed" then "line-through" else ""
+              )
+            ; ("active", if active then "true" else "false") ]
+          [prefix; Xml.data (to_string t)]
 
       method list_item x =
         let contents =
@@ -124,13 +166,34 @@ module H = struct
           | Paragraph i :: rest -> self#inlines i @ self#blocks rest
           | _ -> self#blocks x.contents
         in
+        let checked, checked_html =
+          match x.checkbox with
+          | Some x ->
+              ( x
+              , if x then
+                  Xml.raw
+                    "<i class=\"fa fa-check-square-o\" \
+                     style=\"margin-right:6px;\"></i>"
+                else
+                  Xml.raw
+                    "<i class=\"fa fa-square-o\" \
+                     style=\"margin-right:6px;\"></i>" )
+          | _ -> (false, Xml.empty)
+        in
         match x.number with
-        | None -> [Xml.block "li" contents]
+        | None ->
+            [ Xml.block
+                ~attr:[("checked", string_of_bool checked)]
+                "li"
+                [Xml.block "p" (checked_html :: contents)] ]
         | Some number ->
             [ Xml.block
-                ~attr:[("style", "list-style-type: none")]
+                ~attr:
+                  [ ("style", "list-style-type: none")
+                  ; ("checked", string_of_bool checked) ]
                 "li"
-                (Xml.data (number ^ " ") :: contents) ]
+                [ Xml.block "p"
+                    (Xml.data (number ^ " ") :: checked_html :: contents) ] ]
 
       method block =
         function
@@ -140,14 +203,10 @@ module H = struct
         | Example (_, l) -> [Xml.block "pre" [Xml.data (String.concat "\n" l)]]
         | Src {language; lines} ->
             if Config.get config use_pygments then (
-              let options =
-                if Config.get config number_lines then [Pygments.Lineno]
-                else []
-              in
               try
                 [ Xml.raw
-                    (Pygments.color ~options config language "html"
-                       (List.map fst lines)) ]
+                    (Pygments.color config language "html" (List.map fst lines))
+                ]
               with Command.Failed (command, message) ->
                 Log.warning "While running pygments (%s): %s" command message ;
                 [ Xml.block "pre"
@@ -159,7 +218,7 @@ module H = struct
             [Xml.block "div" ~attr:[("class", name)] (self#blocks l)]
         | Math s ->
             mathjax_used := true ;
-            [ Xml.block "div" ~attr:[("class", "mathblcok")]
+            [ Xml.block "div" ~attr:[("class", "mathblock")]
                 [Xml.data ("$$" ^ s ^ "$$")] ]
         | Quote l -> [Xml.block "blockquote" (self#blocks l)]
         | Table {rows} ->
@@ -171,17 +230,51 @@ module H = struct
         | x -> super#block x
 
       method heading d =
-        Xml.block
+        let attr = [("id", Toc.link d.anchor)] in
+        let marker =
+          match d.marker with
+          | Some v -> (
+            match v with
+            | "TODO" | "todo" ->
+                Xml.raw "<span class=\"task-status todo\">TODO</span>"
+            | "DONE" | "done" ->
+                Xml.raw "<span class=\"task-status done\">DONE</span>"
+            | v ->
+                Xml.raw
+                  (Printf.sprintf "<span class=\"task-status %s\">%s</span>"
+                     (String.lowercase_ascii v) (String.uppercase_ascii v)) )
+          | None -> Xml.empty
+        in
+        let priority =
+          match d.priority with
+          | Some v ->
+              Xml.raw (Printf.sprintf "<span class=\"priority\">%c</span>" v)
+          | None -> Xml.empty
+        in
+        let tags =
+          match d.tags with
+          | [] -> Xml.empty
+          | tags ->
+              Xml.block "span"
+                ~attr:[("class", "heading-tags")]
+                (List.map
+                   (fun tag ->
+                     Xml.raw
+                       (Printf.sprintf "<span class=\"heading-tag\">%s</span>"
+                          tag) )
+                   tags)
+        in
+        let children =
+          self#blocks d.content @ concatmap self#heading d.children
+        in
+        Xml.block ~attr
           (Printf.sprintf "h%d" d.level)
-          ~attr:[("id", Toc.link d.anchor)]
-          (self#inlines d.name)
-        :: (self#blocks d.content @ concatmap self#heading d.children)
+          (self#inlines d.name @ [marker; priority; tags])
+        :: children
 
       method document d =
         [ Xml.block "div" ~attr:[("id", "content")]
-            ( Xml.block "h1" ~attr:[("class", "title")] [Xml.data d.title]
-            :: (self#blocks d.beginning @ concatmap self#heading d.headings) )
-        ]
+            (self#blocks d.beginning @ concatmap self#heading d.headings) ]
     end
 
   let doctype =
