@@ -1,5 +1,6 @@
 (** Automata for blocks *)
 open Batteries
+open Re
 
 open Block
 open Org_automaton

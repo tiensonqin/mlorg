@@ -7,32 +7,36 @@ type heading =
   ; level: int
   ; priority: char option }
 
+
 (** {2 Tables} *)
 and list_item =
-  { contents: t list
-  ; number: string option  (** The optional number of the item *)
-  ; checkbox: bool option
-        (** Does it have a checkbox ([[ ]]) and is it checked ? *) }
+    { contents: t list
+    ; number: string option  (** The optional number of the item *)
+    ; checkbox: bool option
+    (** Does it have a checkbox ([[ ]]) and is it checked ? *) }
+
 
 and table =
-  { groups: (int * int) list option
-        (** List of columns to group. A list of couple (start, stop) *)
-  ; align_line: int array option
-        (** The size of each columns wanted by the user*)
-  ; rows: Inline.t list array array array  (** The rows, split in groups *)
-  ; format: string option  (** The table's format *) }
+    { groups: (int * int) list option
+    (** List of columns to group. A list of couple (start, stop) *)
+    ; align_line: int array option
+    (** The size of each columns wanted by the user*)
+    ; rows: Inline.t list array array array  (** The rows, split in groups *)
+    ; format: string option  (** The table's format *) }
+
 
 and code_block =
-  { numbering: [`Yes | `Keep] option
-  ; lines: (string * string option) list
-  ; ref_format: 'a 'b. (string -> 'a, 'b, 'a, 'a) format4
-        (** The format used to parse ref *)
-  ; header_arguments: Hd_arguments.t
-  ; language: string
-  ; linenumber: int }
+    { numbering: [`Yes | `Keep] option
+    ; lines: (string * string option) list
+    ; ref_format: 'a 'b. (string -> 'a, 'b, 'a, 'a) format4
+    (** The format used to parse ref *)
+    ; header_arguments: Hd_arguments.t
+    ; language: string
+    ; linenumber: int }
+
 
 and t =
-  | Paragraph of Inline.t list
+    | Paragraph of Inline.t list
   | Heading of heading
   | List of list_item list * bool
   | Directive of string * string
@@ -49,6 +53,10 @@ and t =
   | Horizontal_Rule
   | Table of table
 
+
+and blocks = t list
+
+
 let map f v l = List.map (f v) l
 
 class ['a] mapper =
@@ -61,10 +69,10 @@ class ['a] mapper =
       function
       | List (l, b) -> List (map self#list_item v l, b)
       | Table t ->
-          Table
-            { t with
-              rows= Array.map (Array.map (Array.map (self#inlines v))) t.rows
-            }
+        Table
+          { t with
+            rows= Array.map (Array.map (Array.map (self#inlines v))) t.rows
+          }
       | Heading h -> Heading {h with title= self#inlines v h.title}
       | Paragraph i -> Paragraph (self#inlines v i)
       | Footnote_Definition (s, i) -> Footnote_Definition (s, self#inlines v i)
@@ -74,7 +82,7 @@ class ['a] mapper =
       | With_Keywords (vals, l) -> With_Keywords (vals, self#block v l)
       | ( Property_Drawer _ | Src _ | Latex_Environment _ | Horizontal_Rule
         | Example _ | Math _ | Directive _ ) as x ->
-          x
+        x
 
     method list_item v ({contents; _} as x) =
       {x with contents= self#blocks v contents}
@@ -90,16 +98,16 @@ class ['a] folder =
       function
       | Heading h -> self#inlines v h.title
       | Table t ->
-          Array.fold_left
-            (Array.fold_left (Array.fold_left self#inlines))
-            v t.rows
+        Array.fold_left
+          (Array.fold_left (Array.fold_left self#inlines))
+          v t.rows
       | List (l, _b) -> List.fold_left self#list_item v l
       | Paragraph i | Footnote_Definition (_, i) -> self#inlines v i
       | With_Keywords (_, t) -> self#block v t
       | Custom (_, _, t) | Drawer (_, t) | Quote t -> self#blocks v t
       | Property_Drawer _ | Src _ | Latex_Environment _ | Horizontal_Rule
-       |Example _ | Math _ | Directive _ ->
-          v
+      |Example _ | Math _ | Directive _ ->
+        v
 
     method list_item v {contents; _} = self#blocks v contents
   end
@@ -114,15 +122,15 @@ class virtual ['a] bottomUp =
       function
       | Heading h -> self#inlines h.title
       | Table t ->
-          let combine_arr f = self#combine % Array.to_list % Array.map f in
-          combine_arr (combine_arr (combine_arr self#inlines)) t.rows
+        let combine_arr f = self#combine % Array.to_list % Array.map f in
+        combine_arr (combine_arr (combine_arr self#inlines)) t.rows
       | List (l, _b) -> self#combine (List.map self#list_item l)
       | Paragraph i | Footnote_Definition (_, i) -> self#inlines i
       | With_Keywords (_, t) -> self#block t
       | Custom (_, _, t) | Drawer (_, t) | Quote t -> self#blocks t
       | Property_Drawer _ | Src _ | Latex_Environment _ | Horizontal_Rule
-       |Example _ | Math _ | Directive _ ->
-          self#bot
+      |Example _ | Math _ | Directive _ ->
+        self#bot
 
     method list_item {contents; _} = self#blocks contents
   end
@@ -137,15 +145,15 @@ class virtual ['a, 'b] bottomUpWithArg =
       function
       | Heading h -> self#inlines arg h.title
       | Table t ->
-          let combine_arr f = self#combine % Array.to_list % Array.map f in
-          combine_arr (combine_arr (combine_arr (self#inlines arg))) t.rows
+        let combine_arr f = self#combine % Array.to_list % Array.map f in
+        combine_arr (combine_arr (combine_arr (self#inlines arg))) t.rows
       | List (l, _b) -> self#combine (List.map (self#list_item arg) l)
       | Paragraph i | Footnote_Definition (_, i) -> self#inlines arg i
       | With_Keywords (_, t) -> self#block arg t
       | Custom (_, _, t) | Drawer (_, t) | Quote t -> self#blocks arg t
       | Property_Drawer _ | Src _ | Latex_Environment _ | Horizontal_Rule
-       |Example _ | Math _ | Directive _ ->
-          self#bot
+      |Example _ | Math _ | Directive _ ->
+        self#bot
 
     method list_item arg {contents; _} = self#blocks arg contents
   end

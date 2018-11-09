@@ -1,4 +1,5 @@
 (** Automata for latex environment *)
+open Re
 open Batteries
 
 open Block

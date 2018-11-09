@@ -22,7 +22,7 @@ module type Plugin = sig
   val data : interface
   (** The data of the plugin *)
 end
- (** A plugin is module *)
+(** A plugin is module *)
 
 (** A plugin of unspecified type *)
 type _plugin = (module Plugin)
@@ -32,13 +32,19 @@ type 'a plugin = (module Plugin with type interface = 'a)
 
 (** {2 Specific plugins type} *)
 
+type 'a output = 'a BatIO.output
+(* type output = | Unit of unit BatIO.output
+ *               | Buffer of string BatIO.output *)
+
+
 (** {3 Exporters} *)
 module type Exporter = sig
+
   val default_filename : string -> string
   (** [default_filename file] should return the output file corresponding to input file [file].
       See {!Prelude.change_ext} to deal with most common case.  *)
 
-  val export : Config.instance -> Document.t -> unit BatIO.output -> unit
+  val export : Config.instance -> Document.t -> 'a output -> unit
   (** The export function. *)
 end
 
@@ -50,21 +56,21 @@ module Exporters : sig
   val find : string -> exporter
 
   val run :
-    exporter -> Config.instance -> Document.t -> unit BatIO.output -> unit
+    exporter -> Config.instance -> Document.t -> 'a output -> unit
 end
 
 (** {3 General purpose plugin} *)
 module General : sig
   val add : unit plugin -> unit
 end
- (** General purpose plugins (such as Transformers) *)
+(** General purpose plugins (such as Transformers) *)
 
 (** {3 Global item configuration} *)
 module Global : sig
   val verbose : int Config.item
   (** Verbosity level *)
 end
- (** The global configuration. In this module are stored
+(** The global configuration. In this module are stored
     the global parameter of mlorg. *)
 
 (** {2 Configuration management} *)

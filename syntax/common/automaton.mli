@@ -25,7 +25,7 @@ end) : sig
   type input =
     { line: string  (** The line *)
     ; context: context  (** The context *)
-    ; parse: context -> string Enum.t -> context * Block.t list
+    ; parse: context -> string Enum.t -> context * Block.blocks
           (** A parsing functions, for blocks that can contain blocks (lists for instance) *)
     }
    (** The input that will be given to automata. *)
@@ -35,7 +35,7 @@ end) : sig
     | Next of 'state
         (** Everything is fine, let me continue my work, uninterrupted. *)
     | Partial of 'state  (** Everything is fine, but I can be interrupted. *)
-    | Done of Block.t list * bool
+    | Done of Block.blocks * bool
         (** I am done. The boolean tells whether the line should be dropped or not. *)
 
   (** An automaton will be a module, because we want automaton to be able to have
@@ -52,8 +52,8 @@ end) : sig
     val interrupt :
          context
       -> state
-      -> (context -> string Enum.t -> context * Block.t list)
-      -> context * Block.t list
+      -> (context -> string Enum.t -> context * Block.blocks)
+      -> context * Block.blocks
     (** The interruption function, called when the parser decides to switch
       over to another automaton. *)
 

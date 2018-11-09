@@ -5,6 +5,7 @@
 (** As for {!Automaton}, this module is actually a functor
     expecting a context type. On top of that,
     we ask that context has a method number that can be retrieved and set *)
+
 module Make (C : sig
   type context
 
@@ -20,7 +21,7 @@ end) : sig
        Automaton.t list
     -> context
     -> string Batteries.Enum.t
-    -> context * Block.t list
+    -> context * Block.blocks
   (** Parse a bunch of lines *)
 
   val parse_lazy :

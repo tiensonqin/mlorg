@@ -5,7 +5,7 @@ Synopsis:    mlorg is a parser for org-mode files written in OCaml.
 Authors:     Simon Castellan <simon.castellan@iuwt.fr>
 License:     GPL
 Plugins:     META (0.4), DevFiles (0.4), StdFiles (0.4)
-BuildDepends: batteries,dynlink,cmdliner
+BuildDepends: batteries,cmdliner,re,js_of_ocaml,js_of_ocaml-ppx,sexplib,ppx_sexp_conv
 AlphaFeatures: ocamlbuild_more_args, compiled_setup_ml, stdfiles_markdown
 
 
@@ -24,15 +24,19 @@ Library mlorg
     syntax/org/Aut_math, syntax/org/Aut_hr, syntax/org/Aut_latex_env,
     syntax/org/Aut_paragraph, syntax/org/Aut_verbatim, syntax/org/Org_parser,
     document/Document, document/Filter, document/Plugin, plugins/Toc,
-    exports/Org, exports/Xml, exports/Html, exports/Latex, exports/Xml_exp,
-    exports/Quote, exports/Beamer, plugins/Math2png, plugins/Dynamic,
-    plugins/Command, plugins/Pygments, Utils
+    exports/Xml, exports/Html,
+    plugins/Command, Utils
 
 Executable mlorg
   Path:       .
   BuildTools: ocamlbuild
   MainIs:     main.ml
   CompiledObject: best
+
+Executable "orgjs"
+  Path:       .
+  BuildTools: ocamlbuild
+  MainIs:     orgjs.ml
 
 Executable "mlorg.opt"
   Path:       .

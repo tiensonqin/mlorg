@@ -35,16 +35,9 @@ document/Document
 document/Filter
 document/Plugin
 plugins/Toc
-exports/Org
 exports/Xml
 exports/Html
-exports/Latex
 exports/Xml_exp
-exports/Quote
-exports/Beamer
-plugins/Math2png
-plugins/Dynamic
 plugins/Command
-plugins/Pygments
 Utils
 # OASIS_STOP

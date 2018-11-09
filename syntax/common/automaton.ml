@@ -10,12 +10,12 @@ struct
   type input =
     { line: string
     ; context: context
-    ; parse: context -> string Enum.t -> context * Block.t list }
+    ; parse: context -> string Enum.t -> context * Block.blocks }
 
   type 'state return =
     | Next of 'state
     | Partial of 'state
-    | Done of Block.t list * bool
+    | Done of Block.blocks * bool
 
   module type Automaton = sig
     type state
@@ -25,8 +25,8 @@ struct
     val interrupt :
          context
       -> state
-      -> (context -> string Enum.t -> context * Block.t list)
-      -> context * Block.t list
+      -> (context -> string Enum.t -> context * Block.blocks)
+      -> context * Block.blocks
 
     val priority : int
 

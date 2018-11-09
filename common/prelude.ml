@@ -1,3 +1,4 @@
+open Re
 open Batteries
 
 (* *)
@@ -12,7 +13,10 @@ let filteri f s =
 
 let rec is_escaped s k =
   let module String = BatSubstring in
-  k < String.size s && k > 0 && s.[k - 1] = '\\' && not (is_escaped s (k - 1))
+  k < String.size s
+  && k > 0
+  && s.[k - 1] = '\\'
+  && not (is_escaped s (k - 1))
 
 let is_escaping s k = is_escaped s (k + 1)
 

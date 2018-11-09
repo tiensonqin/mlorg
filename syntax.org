@@ -1,0 +1,479 @@
+#+TITLE: Syntax recognized by mlorg
+#+AUTHOR: Simon Castellan
+#+EMAIL: simon.castellan@iuwt.fr
+#+MACRO: demo =$1= ($1)
+#+MACRO: doc [[http://kiwi.iuwt.fr/~asmanur/projects/mlorg/mlorg.docdir/$1.html][$1]]
+#+STYLE: /~asmanur/local.css
+#+begin_abstract
+=mlorg= is a parser written in OCaml for =org-mode=. It attempts to
+recognize most of the syntax handled by the original =org-mode= code.
+#+end_abstract
+This document presents the syntax recognized by =mlorg= as well the
+intended semantics (that exporters should respect) and comments on
+specific exporters if it is relevant, and how the data looks like in
+ML. (Although one can look at the file =syntax/common/block.ml= and
+=syntax/common/inline.ml= for a documentation)
+
+#+begin_tableofcontents
+Table of contents:
+#+end_tableofcontents
+* A quick comment on parsing
+  The parsing of an org-mode file is split into two things: parsing
+  /block/ content (toplevel constructions such as paragraphs, lists,
+  tables, ...) and parsing /inline/ content contained in those blocks
+  (emphasis, links). The two aspects are handled completely seperately.
+** Parsing blocks
+   The parsing of blocks is automata-based: each construction the
+   language gets an automata, and the parsing is line-based. When we have
+   no selected automaton (eg. at the beginning), we /elect/ one by
+   picking the first (with highest priority) that accepts the current
+   line and we let it run until it signals that he is done, eg. when
+   encoutering an empty line. However, to handle more complex documents,
+   automata can be interrupted when they say so, and then at each line,
+   one checks if an automata of higher priority is able to take it from
+   there. This allows to parse things like that:
+
+   : That is a paragraph. Paragraphs normally ends with an empty line, but they can
+   : be interrupted at any time.
+   : - This is the beginning of a list item, that will interrupt the paragraph.
+
+   Without interruption, one would have to add an empty line between the
+   paragraph and the list.
+** Parsing inline contents
+   The parsing of inline contents is done a bit in the same way, each
+   construct gets a parsing function, and the parser tries to find the
+   best match at current point and let this match run until it's
+   done. There is no interruption, and free form text (ie. normal text)
+   is not scanned character by character but word by word (which is only
+   a bit more efficient). This is needed to handle constructs like [[inline
+   links]]. However, this could be improved by creating a lookahead table
+   mapping characters to parsers able to start from this character.
+* Inline constructions
+  Inline constructions are represented in ML by the type src_ocaml{Inline.t}
+** Plain
+   This is free form text without formatting.
+** Emphasis
+   =mlorg= recognizes three kind of emphasis:
+
+   - bold, introduced by =*=: {{{demo(*foo*)}}}
+   - italics, introduced by =/=: {{{demo(/foo/)}}}
+   - underline, introduced by =_=: {{{demo(_foo_)}}}
+
+
+   The text inside the delimiters is recursively parsed so you can nest
+   emphasis and other things: {{{demo(/like *that*/)}}}.
+** Entities
+   Entities allow you to enter unicode character by typing their LaTeX
+   counterpart. Entities are defined in =syntax/common/entity.ml=. In
+   LaTeX, they are left as is, and in HTML exported as entity.
+
+   Example: =\alpha= (\alpha). For more information, consult the
+   {{{doc(Entity)}}} module.
+
+** Export snippets
+   Export snippets allow you to insert a specific code for a specific
+   exporter. This exporter should export the string *as is* and other
+   exporters should ignore this. Example: {{{demo(@html{<b>html
+   bold</b>})}}}.
+
+** Footnotes
+   Footnotes allow you to delay a comment. Their syntax is
+   =[fn:name:Inline definitions]=. The name and the inline definition can
+   be omitted (but not both of course).
+
+   Examples
+   - Reference to a footnote named =name= defined elsewhere: {{{demo([fn:name])}}}
+   - Anonymous footnote: {{{demo([fn::I have no name])}}}
+   - Define and make a reference to a footnote: {{{demo([fn:name:This is
+     the definition of the footnote ~name~])}}}
+
+   If you define twice a footnote (with the same name), the behaviour is
+   unspecified.
+
+   *Note on exporters*: in LaTeX (and Beamer), footnotes are exported as
+   LaTeX footnotes. For other formats that do not support natively
+   footnotes (eg. html), the plugin Toc can rewrite footnotes into plain
+   org-mode constructs. See the documentation of the Toc module for more
+   information.
+
+** Inline calls
+   Inline calls allow you to call babel programs from within inline
+   constructs. The syntax is
+   =call_program[headers](arguments)[headers]=. See the org-mode manual
+   for more information about the meaning of this construct. It is not
+   yet handled by any exporter.
+
+** Inline source code
+   This allows you insert inline source code in your documents. The
+   syntax is as follows: =src_language[options]{code}=. No options is yet
+   supported.
+
+   Example: {{{demo(src_ocaml{print_endline "Hello World";;})}}}
+** LaTeX fragments
+   You can insert inline LaTeX formula by the syntax
+   =$formula$=. Example: {{{demo($x + x = 2 \times x$)}}}.
+
+   This is exported as native inline formula in LaTeX, and Math2png
+   provides a module to rewrite these formulas into images. The HTML
+   exporter can either use this method or use MathJax.
+
+   You can also insert basic LaTeX commands with the following
+   =\command{arguments}=. It is only recognized by LaTeX-based exporters
+   (LaTeX, beamer).
+** Break line
+   To insert a break line, use =\\= at the end of line.\\
+   This line is broken.
+** Macros
+   Macros allow you to perform preprocessing. Macros are called like that
+   ={{{macro(arg1, ..., argn)}}}=. To define macros, see [[Directives][directives]]. Example: ={{{TITLE()}}}= gives {{{TITLE()}}}.
+** Links
+   The general form of links in org-mode is: =[[url][description]]=. Example:
+   {{{demo([[http://google.fr][Google]])}}}. You can omit the URL, and it is then a link to an
+   anchor of the document: {{{demo([[Links]])}}}.
+
+   Links may point to:
+   - URLs, via the syntax ~protocol:uri~,
+   - local files, via the syntax ~./file~ or ~/file~,
+   - anchors in the present document: any string
+
+
+   NB: you can point to an anchor in a local file but it is likely to
+   work only on HTML-based backends.
+
+   On top of that, an unformatted URL will be considered as a link to
+   itself. The syntax is =protocol:url=. Example:
+   {{{demo(http://en.wikipedia.org)}}}
+** Radio targets
+   Radio targets are inserted via =<<<radio target>>>=. =mlorg= makes no
+   use (at the time) of radio targets.
+** Anchors (or targets)
+   Introduced by =<<anchor name>>=. Creates an anchor in the document the
+   user can refer to in a [[Links][link]].
+** Subscript and superscript
+   They follow the same syntax as in LaTeX: =_{subscript}= and
+   =^{superscript}=. Examples: {{{demo(x^{y+z} = x^{y} + x^{z})}}} and
+   {{{demo(x_{k} = x_{0} + … + x_{k-1})}}}.
+** Statistics cookies
+   You can use statistics cookies as in org-mode, eg. =[2/3]= or
+   =[%]=. Most exporters ignore it though.
+** Timestamps
+   Timestamps are very useful in =org-mode= to define agenda and
+   schedules. A timestamp is of the form =<YYYY-MM-DD word>= (date)
+   =<YYYY-MM-DD word HH:MM>= (date and time) where word is any word
+   (usually an ascii representation of the week day of the corresponding
+   date). There are several ways to insert such timestamps in a document:
+
+   - Just as themselves. It will create a timestamp whose meaning is to
+     say that this event is to happen on that day (and time),
+   - A range: =timestamp1--timestamp2=. To denote that the heading is spanning over several days/hours,
+   - =SCHEDULED: timestamp= to say that the task (heading) is scheduled to that day,
+   - =DEADLINE: timestamp= to say that the task (heading) is due for that
+     day.
+   - =CLOSED: timestamp= to say that the task (heading) was done on that
+     day.
+
+   Moreover each timestamp can be either active or inactive depending if
+   it uses brackets or chevrons: =<2013-05-26 sun.>= is active but
+   [2013-05-26 dim.] is not.
+* Block construction
+  As said above, blocks should be separated by empty lines.
+** Paragraph
+   The simple kind of block. Paragraph are a list of non-empty lines
+   containing inline markup. Example:
+
+   #+BEGIN_EXAMPLE
+   This is a paragraph with a lot of meaningful and interesting
+   content that may span or not over sevaral lines to make a nicer
+   example.
+
+   This is another paragraph.
+   #+END_EXAMPLE
+   gives:
+   #+BEGIN_QUOTE
+   This is a paragraph with a lot of meaningful and interesting
+   content that may span or not over sevaral lines to make a nicer
+   example.
+
+   This is another paragraph.
+   #+END_QUOTE
+** Lists
+   Lists can take a lot of different forms in =org-mode=
+*** Unnumbered lists
+    They are the simplest kind of lists. They consist in list of indented
+    items starting by =-= or =+=:
+    #+BEGIN_EXAMPLE
+    - This is one item,
+      still the continuation of the first item (note the indentation)
+
+    - Another item.
+    #+END_EXAMPLE
+    Items are may or may not be separated by newlines. Items can
+    themselves contain block content, for example lists:
+
+    #+BEGIN_EXAMPLE
+    - This is a list item.
+      - A list in a list
+      - Second item.
+        - Note the indentation: twice for each level.
+    - Second item of the outermost list.
+    #+END_EXAMPLE
+    yields
+    #+BEGIN_QUOTE
+    - This is a list item.
+      - A list in a list
+      - Second item.
+        - Note the indentation: twice for each level.
+    - Second item of the outermost list.
+    #+END_QUOTE
+
+    List items do not stop after one empty line but two, allowing to
+    typeset things like that:
+
+    #+BEGIN_EXAMPLE
+    - This is a first paragraph of a list item.
+
+      This is a second one.
+    #+END_EXAMPLE
+    to get
+    #+BEGIN_QUOTE
+    + This is a first paragraph of a list item.
+
+      This is a second one.
+    #+END_QUOTE
+
+    To be clear: normally it would have been necessary to indent the empty
+    line (ie. make a line containing only two spaces). When dealing with
+    complicated nested lists, it is /advised/ to indent empty line to be
+    sure of the result.
+
+    On top of that, list items may start with a checkbox of the form =[ ]=
+    or =[X]=.
+    #+BEGIN_EXAMPLE
+    - [ ] Not done item
+    - [X] Done item
+    #+END_EXAMPLE
+    gives
+    #+BEGIN_QUOTE
+    - [ ] Not done item
+    - [X] Done item
+    #+END_QUOTE
+    These checkboxes are often ignored by exporters.
+
+*** Numbered lists
+    Numbered lists are lists whose items start with a number and a dot, for instance:
+    #+BEGIN_EXAMPLE
+    1. First item
+    1. Second item (note that the number before the dot is useless)
+    #+END_EXAMPLE
+    gives
+    #+BEGIN_QUOTE
+    1. First item
+    1. Second item (note that the number before the dot is useless)
+    #+END_QUOTE
+    =mlorg= allow to customize the format of the number of the list by a
+    directive of the form =[@format]=. =format= can be any string, in which:
+    - =i= is replaced by the item number spelled in lowercase latin number
+    - =I= is replaced by the item number spelled in uppercase latin number
+    - =α= is replaced by the item number spelled in uppercase greek number
+    - =Α= is replaced by the item number spelled in uppercase greek number (Note: this is a capital alpha!)
+    - =1= is replaced by the item number spelled in arabic digit
+
+    Of course, these strings represent all the same number (namely 1) in
+    their respective representation, but you can choose any number you
+    like. If so it will set up the number item to this number. (If they
+    are several number, the first one is picked)
+    #+BEGIN_EXAMPLE
+    1. [@(i)] Lower case latin
+    2. Two
+    1. [@III.] Upper case latin
+    1. Four
+    1. [@{δ}] What's after δ ?
+    1. ε !
+    1. [@42.] Numbers
+    1. [@1 ii III δ] Who will win ?
+    1. Did you guess right ?
+    #+END_EXAMPLE
+    #+BEGIN_QUOTE
+    1. [@(i)] Lower case latin
+    2. Two
+    1. [@III.] Upper case latin
+    1. Four
+    1. [@{δ}] What's after δ ?
+    1. ε !
+    1. [@42.] Numbers
+    1. [@1 ii III δ] Who will win ?
+    1. Did you guess right ?
+    #+END_QUOTE
+
+    See the module {{{doc(Numbering)}}} for more information.
+** Custom blocks
+   Custom blocks are of the form:
+   : #+begin_name options
+   : Contents
+   : #+end_name
+   Contents are not parsed (and are seen as raw strings). Custom blocks
+   represent special environment whose formatting can be customized by
+   the environment. They are exported to div with =class= the name of the
+   block in HTML and as an environment of that name in LaTeX. There are
+   several special custom blocks that are handled separately:
+
+   - Example blocks. Represents verbatim data, can also be inserted this way:
+     : : Contents
+     : : Contents
+     : : Contents
+     gives
+     : Contents
+     : Contents
+     : Contents
+   - Source code block. They expect a language and should be colored in
+     the output:
+     #+BEGIN_SRC ocaml
+     let string = "Hello, World" in
+     print_endline string
+     #+END_SRC
+     Options will be useful when babel will be supported
+
+   - Quote block: generates quote. *This is the only custom blocks whose
+     contents is parsed*:
+     : #+BEGIN_QUOTE
+     : This is a quote
+     : - with a list
+     :   #+BEGIN_QUOTE
+     :   and a quote inside duh
+     :   #+END_QUOTE
+     : #+END_QUOTE
+     gives
+     #+BEGIN_QUOTE
+     This is a quote
+     - with a list
+       #+BEGIN_QUOTE
+       and a quote inside duh
+     #+END_QUOTE
+     #+END_QUOTE
+
+** Tables
+   Tables are very versatile. =mlorg= only recognizes a subset of
+   what is possible in =org-mode=.
+   Simple tables look like that:
+
+   |--------------------------------+---------------------|
+   | (1, 1)                         | (2, 1) and /inline/ |
+   | Second line, first group       | =stuff=             |
+   |--------------------------------+---------------------|
+   | First line of the second group | *bold*              |
+   |--------------------------------+---------------------|
+
+   is typeset via
+   : |--------------------------------+---------------------|
+   : | (1, 1)                         | (2, 1) and /inline/ |
+   : | Second line, first group       | =stuff=             |
+   : |--------------------------------+---------------------|
+   : | First line of the second group | *bold*              |
+   : |--------------------------------+---------------------|
+
+   More formally, tables are composed of two type of lines
+   - Seperation lines: of the form =|-....= where =...= can be anything.
+   - Rows: of the form =| Col 1 | Col2 | ... |=
+
+   Moreover, size specifier of org-mode are recognized (use =<size>= as
+   only content of cell). And the grouping construct as well:
+
+   : |---+-------------+-------------------+---+---+--------------+---|
+   : | = | <           |                   | > | < |              | > |
+   : |   | First group | Still first group |   |   | Second group |   |
+
+   However the exporters do not handle it right now.
+
+** Horizontal rules
+   Any line starting by fives dashes creates an horizontal rule. Meaning
+   can depend on the exporters but it should either mean "go to next page" or "draw in horizontal rule to make a seperation". Example
+   : -----
+   gives:
+   -----
+** Directives
+   Directives are a way to put metadata into your document, for instance
+   the title and the author:
+   #+BEGIN_EXAMPLE
+   #+TITLE: Test
+   #+AUTHOR: Testman
+   #+END_EXAMPLE
+   There is no list of directive name, you can do whatever it is (as long
+   as it is not a [[Keywords][keyword]]). You can refer to them after in the document
+   by a [[Macros][macro]] ={{{DIRECTIVE_NAME()}}}=.
+
+   Moreover the special directive =MACRO= is used to define a new macro. Its syntax is
+   : #+MACRO: macro-name Contents which can refer to argument using $1, ..., $k
+
+   Example:
+   : #+MACRO: test Some /$1/ *$2*
+   : {{{test(Macro, invocation)}}}
+   gives
+   #+MACRO: test Some /$1/ *$2*
+   {{{test(Macro, invocation)}}}
+
+   Macro management is case-insensitive.
+** Keywords
+   Keywords are a way to attach metadata to blocks (such as name). They
+   follow the same syntax as [[Directives][directives]] and should be placed before a
+   block.
+
+   : #+NAME: Some name
+   : This paragraph is named. Isn't it nice ?
+
+   Exporters ignore all keywords at the moment and they may be used to
+   retrieve special blocks in the document.
+
+   List of accepted keywords: =ATTR_ASCII=, =ATTR_DOCBOOK=, =ATTR_HTML=,
+   =ATTR_LATEX=, =ATTR_ODT=, =CAPTION=, =DATA=, =HEADER=, =HEADERS=,
+   =LABEL=, =NAME=, =PLOT=, =RESNAME=, =RESULT=, =RESULTS=, =SOURCE=,
+   =SRCNAME= and =TBLNAME=.
+
+   On top of that, one has the following translation (if you enter a
+   keyword on the left, it will be as if you typed the corresponding
+   keyword):
+   - =DATA= -> =NAME=
+   - =LABEL= -> =NAME=
+   - =RESNAME= -> =NAME=
+   - =SOURCE= -> =NAME=
+   - =SRCNAME= -> =NAME=
+   - =TBLNAME= -> =NAME=
+   - =RESULT= -> =RESULTS=
+   - =HEADERS= -> =HEADER=
+** Drawers
+   Drawers a way to hide information in =org-mode=. The syntax is:
+   : :DRAWERNAME:
+   : Contents of the drawer (socks for instance)
+   : :END:
+
+   There is a special kind of drawer that =mlorg= recognizes, it is the
+   /PROPERTY/ drawer, which look like:
+   : :PROPERTIES:
+   : :KEY: Value
+   : :KEY: Value
+   : :KEY: Value
+   : :END:
+   They are used to store information about a heading and can be used to
+   filter on them. (Exporters don't use them as of today)
+** LaTeX
+   You can insert LaTeX blocks by:
+
+   : $$Your big formulas$$
+
+   eg,
+
+   $$ \sum_{k=1}^{+\infty} \frac 1 {k^2} = \frac{\pi^2} 6$$
+
+   or you can insert plain LaTeX environment
+
+   : \begin{env}options
+   : Contents
+   : \end{env}
+
+   Whenever possible, you should use [[Custom%20blocks][custom blocks]], that get exported to
+   latex environment in LaTeX-based outputs, and are more portable (in
+   HTML, they are exported as div that you can style or script).
+* Conclusion
+  Most syntactical constructs of =org-mode= should be documented
+  here. However =org-mode= is very complex and evolves rapidly. If you
+  think that there is a missing construct or that a construct is not
+  handled the way it should, please send an email.

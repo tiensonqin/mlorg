@@ -2,6 +2,7 @@ type context =
   { markers: string list
   ; number: int  (** The number of the line in the input *) }
 
+
 type t = context
 
 let default = {markers= ["TODO"; "WAITING"; "DONE"]; number= 1}

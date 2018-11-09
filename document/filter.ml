@@ -1,3 +1,4 @@
+open Re
 open Batteries
 open Document
 open Timestamp

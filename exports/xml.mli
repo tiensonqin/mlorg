@@ -39,5 +39,5 @@ val output :
     written like <foo/> when there's no child.
     - the list of markup for which spaces are significant *)
 
-val output_xhtml : ?offset:int -> unit IO.output -> t list -> unit
+val output_xhtml : ?offset:int -> 'a IO.output -> t list -> unit
 (** Outputs the tree as xhtml. *)

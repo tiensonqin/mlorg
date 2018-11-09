@@ -1,3 +1,5 @@
+open Re
+
 (** Filters *)
 
 (** This file defines basic filter on headings *)

@@ -4,6 +4,7 @@ type date = {year: int; month: int; day: int}
 
 type time = {hour: int; min: int}
 
+(* TODO: delay *)
 type t = {date: date; time: time option; repetition: date option; active: bool}
 
 type range = {start: t; stop: t}

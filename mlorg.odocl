@@ -5,7 +5,6 @@ common/Config
 common/ExtList
 common/Numbering
 common/Timestamp
-plugins/Dynamic
 document/Document
 syntax/common/Entity
 syntax/common/Inline
@@ -18,13 +17,6 @@ document/Filter
 document/Plugin
 exports/Xml
 exports/Html
-exports/Latex
-exports/Xml_exp
-exports/Org
-exports/Quote
-exports/Beamer
-plugins/Pygments
-plugins/Math2png
 plugins/Toc
 Utils
 Mlorg

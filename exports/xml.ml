@@ -1,5 +1,9 @@
 open Batteries
 
+let output_string = String.print
+
+let output_char = Char.print
+
 type t =
   | Empty
   | Data of string
@@ -111,7 +115,7 @@ let output ?(offset = 0) fd inlines prep_inlines exceptions space_significants
   List.iter (write offset) trees ;
   output_string fd "\n"
 
-let output_xhtml ?offset chan =
+let output_xhtml ?offset (chan : 'a IO.output) =
   output chan ?offset
     ["u"; "i"; "em"; "b"; "img"; "a"; "code"; "sup"; "sub"; "abbr"; "span"]
     [ "p"

@@ -20,14 +20,15 @@ type meta =
   ; properties: (string * string) list  (** The properties of the heading *)
   ; clocks: Timestamp.range list  (** The clocked amount of time *)
   ; current_clock: Timestamp.t option
-        (** The optional time when it was clocked *) }
+  (** The optional time when it was clocked *) }
+
  (** The metadata of a heading in a document. *)
 
 (** A heading in a document *)
 type heading =
   { name: Inline.t list
   ; level: int
-  ; content: Block.t list
+  ; content: Block.blocks
   ; mutable father: heading option
   ; children: heading list
   ; tags: string list
@@ -35,6 +36,7 @@ type heading =
   ; priority: char option  (** The optional priority *)
   ; meta: meta
   ; anchor: string }
+
 
 (**
     A document is:
@@ -48,7 +50,7 @@ type heading =
 *)
 type t =
   { filename: string  (** The filename the document was parsed from *)
-  ; beginning: Block.t list  (** The contents at the beginning *)
+  ; beginning: Block.blocks  (** The contents at the beginning *)
   ; directives: (string * string) list
         (** The directives present in the file *)
   ; headings: heading list  (** The top-level heading *)
@@ -57,6 +59,7 @@ type t =
   ; opts: (string * string) list  (** The options set by the file *)
   ; title: string  (** The document's title *)
   ; author: string  (** The document's author *) }
+
 
 (* config *)
 let config = Config.create ()
@@ -375,6 +378,11 @@ let from_file ?config filename =
 let from_fun ?config filename f =
   Enum.from_while f |> Org_parser.parse |> snd |> from_blocks ?config filename
 
+let from_string ?config filename str =
+  let lines = String.nsplit str ~by:"\n" in
+  List.enum lines |> Org_parser.parse |> snd
+  |> from_blocks ?config filename
+
 let rec descendants heading =
   heading :: List.concat (List.map descendants heading.children)
 
@@ -405,7 +413,7 @@ let dump =
 let blocks_by_keywords pred doc =
   let folder =
     object (self)
-      inherit [Block.t list] folder as super
+      inherit [Block.blocks] folder as super
 
       method block acc =
         function

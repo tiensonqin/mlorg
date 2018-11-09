@@ -30,7 +30,7 @@ type meta = {
 type heading = {
   name      : Inline.t list; (** Its name, as inline formatted content *)
   level     : int; (** Its level (number of star), starts at 1 *)
-  content   : Block.t list; (** The content before the first children *)
+  content   : Block.blocks; (** The content before the first children *)
   mutable father : heading option; (** The optional father of the heading. [None] if it is the root heading. *)
   children  : heading list; (** The children *)
   tags      : string list; (** The tags *)
@@ -44,7 +44,7 @@ type heading = {
 type t = {
   filename : string;
   (** The filename the document was parsed from *)
-  beginning : Block.t list;
+  beginning : Block.blocks;
   (** The contents at the beginning *)
   directives : (string * string) list;
   (** The directives present in the file *)
@@ -114,10 +114,10 @@ val config : Config.t
 
 (** {1 Parsing documents} *)
 
-val directives : Block.t list -> (string * string) list
+val directives : Block.blocks -> (string * string) list
 (** Return the directives of a list of blocks *)
 
-val opts : Block.t list -> (string * string) list
+val opts : Block.blocks -> (string * string) list
 (** Return the options set in a list of blocks *)
 
 val from_chan : ?config: Config.instance -> string -> BatIO.input -> t * Config.instance
@@ -130,6 +130,11 @@ val from_file  : ?config: Config.instance -> string -> t * Config.instance
 
 val from_fun : ?config: Config.instance -> string -> (unit -> string option) -> t * Config.instance
 (** From a function *)
+
+val from_string : ?config: Config.instance -> string -> BatString.t -> t * Config.instance
+(** From a string (the second argument is the filename).
+    Returns a new instance updated with the parameter defined in the document.
+*)
 
 (** {1 Handling documents} *)
 
@@ -151,7 +156,7 @@ val prop_val_ : string -> heading -> string
 val dump : heading list -> unit
 (** Dump a list of heading as a tree *)
 
-val blocks_by_keywords : ((string * string) list -> bool) -> t -> Block.t list
+val blocks_by_keywords : ((string * string) list -> bool) -> t -> Block.blocks
 (** [blocks_by_property document pred] returns all the block in [document]
     whose keywords satisfy [pred] *)
 
@@ -176,7 +181,7 @@ val footnotes : t -> (string * Inline.t list) list
 
 (** {3 Smart constructors} *)
 val document: ?filename:string ->
-  ?beginning:Block.t list ->
+  ?beginning:Block.blocks ->
   ?directives:(string * string) list ->
   ?opts:(string * string) list ->
   ?beg_meta:meta ->
@@ -195,7 +200,7 @@ val heading: ?timestamps: Timestamp.t list ->
   ?father: heading ->
   ?priority: char ->
   ?anchor: string ->
-  ?content: Block.t list ->
+  ?content: Block.blocks ->
   ?marker: string ->
   ?tags: string list ->
   ?children: heading list ->

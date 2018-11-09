@@ -14,11 +14,7 @@ module Config : sig
 
   val number_lines : bool Config.item
 
-  val use_math2png : bool Config.item
-
   val image_extensions : string list Config.item
-
-  val use_pygments : bool Config.item
 end
 
 (** The object used to export to Html. *)
@@ -39,6 +35,6 @@ class htmlExporter :
        method combine : Xml.t list list -> Xml.t list
      end
 
-val export : instance -> Document.t -> unit Batteries.IO.output -> unit
+val export : instance -> Document.t -> 'a Batteries.IO.output -> unit
 (** [export config document out] exports the document [document] to HTML
     and writes the output to [out] *)

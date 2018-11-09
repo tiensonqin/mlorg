@@ -30,10 +30,6 @@ module H = struct
     Config.add config "number-lines" boolean
       "Shall lines be numbered inside code blocks" false
 
-  let use_math2png =
-    Config.add config "use-math2png" boolean
-      "Convert latex formulas to PNG using Math2png extension" false
-
   let image_extensions =
     Config.add config "image-extensions" (list string)
       "The list of extensions to be considered as images"
@@ -50,10 +46,6 @@ module H = struct
   let inline_js =
     Config.add config "javascript" string
       "Inline javascript code to add in the <head> section" ""
-
-  let use_pygments =
-    Config.add config "use-pygments" boolean
-      "Shall we use pygments to color code ?" true
 
   type interface = exporter
 
@@ -202,18 +194,8 @@ module H = struct
         | List (l, _) -> [Xml.block "ul" (concatmap self#list_item l)]
         | Example (_, l) -> [Xml.block "pre" [Xml.data (String.concat "\n" l)]]
         | Src {language; lines} ->
-            if Config.get config use_pygments then (
-              try
-                [ Xml.raw
-                    (Pygments.color config language "html" (List.map fst lines))
-                ]
-              with Command.Failed (command, message) ->
-                Log.warning "While running pygments (%s): %s" command message ;
-                [ Xml.block "pre"
-                    [Xml.data (String.concat "\n" (List.map fst lines))] ] )
-            else
-              [ Xml.block "pre"
-                  [Xml.data (String.concat "\n" (List.map fst lines))] ]
+          [ Xml.block "pre"
+              [Xml.data (String.concat "\n" (List.map fst lines))] ]
         | Custom (name, _, l) ->
             [Xml.block "div" ~attr:[("class", name)] (self#blocks l)]
         | Math s ->
@@ -283,10 +265,6 @@ module H = struct
 
   let with_custom_exporter o config doc out =
     let doc = Toc.transform config doc in
-    let doc =
-      if Config.get config use_math2png then Math2png.transform config doc
-      else doc
-    in
     Xml.output_xhtml out (o#document doc)
 
   module E = struct

@@ -36,11 +36,17 @@ let config (type u) (m : u plugin) =
 
 (* Specific plugins type *)
 
+(* type output = | Unit of unit BatIO.output
+ *               | Buffer of string BatIO.output *)
+
+type 'a output = 'a BatIO.output
+
+
 (* Exporters *)
 module type Exporter = sig
   val default_filename : string -> string
 
-  val export : Config.instance -> Document.t -> unit BatIO.output -> unit
+  val export : Config.instance -> Document.t -> 'a output -> unit
 end
 
 type exporter = (module Exporter)

@@ -90,6 +90,8 @@ and t =
   | Horizontal_Rule  (** Horizontal rule *)
   | Table of table  (** A block *)
 
+and blocks = t list
+
 (** {1 Mapper and folders} *)
 
 (** See {!Document} for a description *)

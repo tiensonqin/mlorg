@@ -1,5 +1,4 @@
 (* mlorg's main *)
-
 open Batteries
 open Mlorg
 open Document
@@ -100,5 +99,5 @@ let _ =
               "--backend", Set_string backend, "Output backend"]
       (fun s -> filename := s) "mlorg";
       generate !filename !backend !output !opts
-)
+    )
 *)
